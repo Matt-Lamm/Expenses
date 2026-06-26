@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Expenses">
+  <meta name="theme-color" content="#FDFAF6">
+  <title>Expenses</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg:        #FDFAF6;
+      --surface:   #FFFFFF;
+      --border:    #E4D9CC;
+      --border-lt: #EDE6DC;
+      --text:      #3A2F27;
+      --muted:     #B09E8E;
+      --faint:     #D4C4B0;
+      --accent:    #C17B6F;
+      --accent-bg: #FDF0ED;
+      --accent-dk: #8B3E35;
+      --save:      #7A9E87;
+      --save-bg:   #F5FAF7;
+      --radius:    16px;
+      --safe-top:    env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding:
+        calc(var(--safe-top) + 32px)
+        24px
+        calc(var(--safe-bottom) + 32px);
+    }
+
+    /* ── Screens ─────────────────────────────────────── */
+    .screen {
+      display: none;
+      width: 100%;
+      max-width: 390px;
+      flex-direction: column;
+    }
+    .screen.active {
+      display: flex;
+      animation: rise 0.22s ease both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Washi paper card ────────────────────────────── */
+    .card {
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: 28px;
+      padding: 32px 24px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Horizontal washi lines */
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        180deg,
+        transparent 0px,
+        transparent 31px,
+        rgba(210,195,180,0.13) 31px,
+        rgba(210,195,180,0.13) 32px
+      );
+      pointer-events: none;
+      border-radius: 28px;
+    }
+
+    /* Ribbon accent */
+    .ribbon {
+      position: absolute;
+      top: 0; right: 28px;
+      width: 3px;
+      height: 52px;
+      background: linear-gradient(to bottom, #E8A598 0%, transparent 100%);
+      border-radius: 0 0 4px 4px;
+    }
+
+    /* ── Step dots ───────────────────────────────────── */
+    .dots {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+    .dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--border-lt);
+      transition: width 0.2s, background 0.2s;
+    }
+    .dot.active {
+      width: 20px;
+      border-radius: 3px;
+      background: var(--accent);
+    }
+    .dot.done { background: var(--faint); }
+
+    /* ── Labels ──────────────────────────────────────── */
+    .label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    /* ── Amount field ────────────────────────────────── */
+    .amount-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+    .currency {
+      font-size: 24px;
+      font-weight: 300;
+      color: var(--faint);
+    }
+    #amount {
+      font-size: 52px;
+      font-weight: 300;
+      color: var(--text);
+      background: transparent;
+      border: none;
+      outline: none;
+      width: 100%;
+      caret-color: var(--accent);
+    }
+    #amount::placeholder { color: var(--border); }
+
+    /* ── Divider ─────────────────────────────────────── */
+    .divider {
+      height: 0.5px;
+      background: var(--border);
+      margin-bottom: 22px;
+    }
+
+    /* ── Item field ──────────────────────────────────── */
+    #item-name {
+      font-size: 20px;
+      font-weight: 300;
+      color: var(--text);
+      background: transparent;
+      border: none;
+      outline: none;
+      width: 100%;
+      caret-color: var(--accent);
+    }
+    #item-name::placeholder { color: var(--border); }
+
+    /* ── Back link ───────────────────────────────────── */
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 22px;
+      font-family: inherit;
+    }
+
+    /* ── Category grid ───────────────────────────────── */
+    .cat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+    .cat-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 13px;
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+      font-size: 13px;
+      font-weight: 400;
+      color: #6B5D52;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+    .cat-btn .icon { font-size: 15px; }
+    .cat-btn.selected {
+      border: 1.5px solid var(--accent);
+      background: var(--accent-bg);
+      color: var(--accent-dk);
+    }
+
+    /* ── Type toggle ─────────────────────────────────── */
+    .type-toggle {
+      display: flex;
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 26px;
+      background: var(--bg);
+    }
+    .type-btn {
+      flex: 1;
+      padding: 12px 8px;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s, color 0.15s;
+    }
+    .type-btn + .type-btn { border-left: 0.5px solid var(--border); }
+    .type-btn.selected {
+      background: var(--accent);
+      color: #FDF8F5;
+      font-weight: 500;
+    }
+
+    /* ── Date field ──────────────────────────────────── */
+    #entry-date {
+      font-size: 20px;
+      font-weight: 300;
+      color: var(--text);
+      background: transparent;
+      border: none;
+      outline: none;
+      width: 100%;
+      caret-color: var(--accent);
+      font-family: inherit;
+      margin-bottom: 6px;
+    }
+    .date-hint {
+      font-size: 11px;
+      color: var(--faint);
+      margin-bottom: 28px;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Buttons ─────────────────────────────────────── */
+    .btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      letter-spacing: 0.02em;
+      transition: opacity 0.15s;
+    }
+    .btn:active { opacity: 0.75; }
+    .btn-next {
+      background: var(--accent);
+      color: #FDF8F5;
+      margin-top: 32px;
+    }
+    .btn-save {
+      background: var(--save);
+      color: var(--save-bg);
+      margin-top: 32px;
+    }
+    .btn-reset {
+      background: var(--accent);
+      color: #FDF8F5;
+    }
+
+    /* ── Validation hints ────────────────────────────── */
+    .err {
+      font-size: 12px;
+      color: #B85450;
+      margin-top: 6px;
+      display: none;
+    }
+    .err.show { display: block; }
+
+    /* ── Success screen ──────────────────────────────── */
+    .check-circle {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: var(--save-bg);
+      border: 1px solid #C8DFD0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin: 0 auto 20px;
+    }
+    .success-title {
+      font-size: 22px;
+      font-weight: 300;
+      text-align: center;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+    .success-sub {
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .summary {
+      background: #FDFAF6;
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 4px 16px;
+      margin-bottom: 28px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 0;
+      font-size: 13px;
+    }
+    .summary-row + .summary-row { border-top: 0.5px solid var(--border-lt); }
+    .summary-key { color: var(--muted); }
+    .summary-val { font-weight: 500; color: var(--text); }
+
+    /* ── Toast ───────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--safe-bottom) + 28px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text);
+      color: var(--bg);
+      padding: 10px 20px;
+      border-radius: 99px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+      white-space: nowrap;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ── Spinner ─────────────────────────────────────── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     SCREEN 1 — Amount + Item
+══════════════════════════════════════════════════ -->
+<div class="screen active" id="s1">
+  <div class="card">
+    <div class="ribbon"></div>
+    <div class="dots">
+      <div class="dot active"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+
+    <div class="label">Amount (RM)</div>
+    <div class="amount-row">
+      <span class="currency">RM</span>
+      <input id="amount" type="number" inputmode="decimal" placeholder="0.00" step="0.01" min="0">
+    </div>
+    <div id="err-amount" class="err">Please enter an amount.</div>
+
+    <div class="divider"></div>
+
+    <div class="label" style="margin-top:20px">Item</div>
+    <input id="item-name" type="text" placeholder="What did you spend on?" autocomplete="off" autocorrect="off">
+    <div id="err-item" class="err">Please enter an item name.</div>
+
+    <button class="btn btn-next" onclick="goTo2()">Next →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCREEN 2 — Category + Type
+══════════════════════════════════════════════════ -->
+<div class="screen" id="s2">
+  <div class="card">
+    <div class="ribbon"></div>
+    <div class="dots">
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+      <div class="dot"></div>
+    </div>
+
+    <button class="back" onclick="goTo1()">← Back</button>
+
+    <div class="label">Category</div>
+    <div class="cat-grid">
+      <button class="cat-btn" data-cat="Food"          onclick="pickCat(this)"><span class="icon">🍜</span> Food</button>
+      <button class="cat-btn" data-cat="Shopping"      onclick="pickCat(this)"><span class="icon">🛍️</span> Shopping</button>
+      <button class="cat-btn" data-cat="Transport"     onclick="pickCat(this)"><span class="icon">🚗</span> Transport</button>
+      <button class="cat-btn" data-cat="Sports"        onclick="pickCat(this)"><span class="icon">⚽</span> Sports</button>
+      <button class="cat-btn" data-cat="Digital"       onclick="pickCat(this)"><span class="icon">💻</span> Digital</button>
+      <button class="cat-btn" data-cat="Beauty"        onclick="pickCat(this)"><span class="icon">✨</span> Beauty</button>
+      <button class="cat-btn" data-cat="Entertainment" onclick="pickCat(this)"><span class="icon">🎉</span> Entertainment</button>
+      <button class="cat-btn" data-cat="Others"        onclick="pickCat(this)"><span class="icon">📦</span> Others</button>
+    </div>
+    <div id="err-cat" class="err">Please select a category.</div>
+
+    <div class="label" style="margin-top:8px">Type</div>
+    <div class="type-toggle">
+      <button class="type-btn selected" id="btn-personal" onclick="pickType('Personal')">Personal</button>
+      <button class="type-btn"          id="btn-shared"   onclick="pickType('Shared')">Shared</button>
+    </div>
+
+    <button class="btn btn-next" onclick="goTo3()">Next →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCREEN 3 — Date
+══════════════════════════════════════════════════ -->
+<div class="screen" id="s3">
+  <div class="card">
+    <div class="ribbon"></div>
+    <div class="dots">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+      <div class="dot active"></div>
+    </div>
+
+    <button class="back" onclick="goTo2()">← Back</button>
+
+    <div class="label">Date</div>
+    <input id="entry-date" type="date">
+    <div class="date-hint">Defaults to today · tap to change</div>
+
+    <div class="divider"></div>
+
+    <button class="btn btn-save" id="btn-save" onclick="submitEntry()">Save entry</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     SCREEN 4 — Success
+══════════════════════════════════════════════════ -->
+<div class="screen" id="s4">
+  <div class="card">
+    <div class="ribbon"></div>
+    <div style="padding-top:8px">
+      <div class="check-circle">✓</div>
+      <div class="success-title">Saved</div>
+      <div class="success-sub" id="success-note">Entry logged to Google Sheets.</div>
+
+      <div class="summary" id="summary"></div>
+
+      <button class="btn btn-reset" onclick="reset()">Add another</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ─── CONFIG — paste your Google Apps Script Web App URL here ───────────
+  const SHEET_URL = "YOUR_APPS_SCRIPT_URL_HERE";
+  // ───────────────────────────────────────────────────────────────────────
+
+  let entry = { amount: "", item: "", category: "", type: "Personal", date: "" };
+
+  // Set today as default date
+  function todayValue() {
+    return new Date().toISOString().split("T")[0];
+  }
+  document.getElementById("entry-date").value = todayValue();
+
+  // ── Screen transitions ──────────────────────────────────────────────────
+  function show(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
+
+  function goTo1() { show("s1"); }
+
+  function goTo2() {
+    const amt  = document.getElementById("amount").value;
+    const item = document.getElementById("item-name").value.trim();
+    const amtOk  = amt && parseFloat(amt) > 0;
+    const itemOk = item.length > 0;
+    document.getElementById("err-amount").classList.toggle("show", !amtOk);
+    document.getElementById("err-item").classList.toggle("show", !itemOk);
+    if (!amtOk || !itemOk) return;
+    entry.amount = parseFloat(amt).toFixed(2);
+    entry.item   = item;
+    show("s2");
+  }
+
+  function goTo3() {
+    if (!entry.category) {
+      document.getElementById("err-cat").classList.add("show");
+      return;
+    }
+    document.getElementById("err-cat").classList.remove("show");
+    show("s3");
+  }
+
+  // ── Selections ──────────────────────────────────────────────────────────
+  function pickCat(btn) {
+    document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    entry.category = btn.dataset.cat;
+    document.getElementById("err-cat").classList.remove("show");
+  }
+
+  function pickType(t) {
+    entry.type = t;
+    document.getElementById("btn-personal").classList.toggle("selected", t === "Personal");
+    document.getElementById("btn-shared").classList.toggle("selected",   t === "Shared");
+  }
+
+  // ── Submit ──────────────────────────────────────────────────────────────
+  async function submitEntry() {
+    entry.date = document.getElementById("entry-date").value || todayValue();
+
+    const btn = document.getElementById("btn-save");
+    btn.innerHTML = '<span class="spinner"></span>Saving…';
+    btn.disabled  = true;
+
+    let ok = false;
+    let note = "";
+
+    if (SHEET_URL === "YOUR_APPS_SCRIPT_URL_HERE") {
+      await new Promise(r => setTimeout(r, 700));
+      ok   = true;
+      note = "Demo mode — connect your Google Sheet to go live.";
+    } else {
+      try {
+        const fd = new FormData();
+        Object.entries(entry).forEach(([k, v]) => fd.append(k, v));
+        const res  = await fetch(SHEET_URL, { method: "POST", body: fd });
+        const text = await res.text();
+        ok = res.ok || text.includes("success");
+      } catch {
+        ok   = false;
+        note = "Could not reach Google Sheets. Check your connection.";
+      }
+    }
+
+    btn.innerHTML = "Save entry";
+    btn.disabled  = false;
+
+    if (ok) {
+      renderSuccess(note);
+    } else {
+      showToast(note || "Something went wrong — try again.");
+    }
+  }
+
+  // ── Success screen ──────────────────────────────────────────────────────
+  function renderSuccess(note) {
+    const labels = {
+      date: "Date", item: "Item",
+      amount: "Cost (RM)", category: "Category", type: "Type"
+    };
+    const rows = Object.entries(labels).map(([k, label]) => {
+      const val = k === "amount" ? "RM " + entry[k] : entry[k];
+      return `<div class="summary-row">
+        <span class="summary-key">${label}</span>
+        <span class="summary-val">${val}</span>
+      </div>`;
+    }).join("");
+    document.getElementById("summary").innerHTML = rows;
+    document.getElementById("success-note").textContent =
+      note || "Entry logged to Google Sheets.";
+    show("s4");
+  }
+
+  // ── Reset ───────────────────────────────────────────────────────────────
+  function reset() {
+    entry = { amount: "", item: "", category: "", type: "Personal", date: "" };
+    document.getElementById("amount").value     = "";
+    document.getElementById("item-name").value  = "";
+    document.getElementById("entry-date").value = todayValue();
+    document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("selected"));
+    pickType("Personal");
+    ["err-amount","err-item","err-cat"].forEach(id =>
+      document.getElementById(id).classList.remove("show")
+    );
+    show("s1");
+    setTimeout(() => document.getElementById("amount").focus(), 120);
+  }
+
+  // ── Toast ───────────────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 3200);
+  }
+
+  // ── Auto-focus amount on load ────────────────────────────────────────────
+  window.addEventListener("load", () => {
+    setTimeout(() => document.getElementById("amount").focus(), 300);
+  });
+
+  // ── Service Worker ───────────────────────────────────────────────────────
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+</script>
+</body>
+</html>
