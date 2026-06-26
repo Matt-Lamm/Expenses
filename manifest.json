@@ -2,7 +2,7 @@
   "name": "Expense Logger",
   "short_name": "Expenses",
   "description": "Quick expense logging to Google Sheets",
-  "start_url": "/",
+  "start_url": "/Expenses/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FDFAF6",
