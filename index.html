@@ -436,21 +436,24 @@
 
     <div class="label">Category</div>
     <div class="cat-grid">
-      <button class="cat-btn" data-cat="Food"          onclick="pickCat(this)"><span class="icon">🍜</span> Food</button>
-      <button class="cat-btn" data-cat="Shopping"      onclick="pickCat(this)"><span class="icon">🛍️</span> Shopping</button>
-      <button class="cat-btn" data-cat="Transport"     onclick="pickCat(this)"><span class="icon">🚗</span> Transport</button>
-      <button class="cat-btn" data-cat="Sports"        onclick="pickCat(this)"><span class="icon">⚽</span> Sports</button>
-      <button class="cat-btn" data-cat="Digital"       onclick="pickCat(this)"><span class="icon">💻</span> Digital</button>
-      <button class="cat-btn" data-cat="Beauty"        onclick="pickCat(this)"><span class="icon">✨</span> Beauty</button>
-      <button class="cat-btn" data-cat="Entertainment" onclick="pickCat(this)"><span class="icon">🎉</span> Entertainment</button>
-      <button class="cat-btn" data-cat="Others"        onclick="pickCat(this)"><span class="icon">📦</span> Others</button>
+      <button class="cat-btn" data-cat="Dining"         onclick="pickCat(this)"><span class="icon">🍜</span> Dining</button>
+      <button class="cat-btn" data-cat="Groceries"      onclick="pickCat(this)"><span class="icon">🛒</span> Groceries</button>
+      <button class="cat-btn" data-cat="Household"      onclick="pickCat(this)"><span class="icon">🏠</span> Household</button>
+      <button class="cat-btn" data-cat="Transport"      onclick="pickCat(this)"><span class="icon">🚗</span> Transport</button>
+      <button class="cat-btn" data-cat="Shopping"       onclick="pickCat(this)"><span class="icon">🛍️</span> Shopping</button>
+      <button class="cat-btn" data-cat="Sports"         onclick="pickCat(this)"><span class="icon">⚽</span> Sports</button>
+      <button class="cat-btn" data-cat="Digital"        onclick="pickCat(this)"><span class="icon">💻</span> Digital</button>
+      <button class="cat-btn" data-cat="Beauty"         onclick="pickCat(this)"><span class="icon">✨</span> Beauty</button>
+      <button class="cat-btn" data-cat="Entertainment"  onclick="pickCat(this)"><span class="icon">🎉</span> Entertainment</button>
+      <button class="cat-btn" data-cat="Others"         onclick="pickCat(this)"><span class="icon">📦</span> Others</button>
     </div>
     <div id="err-cat" class="err">Please select a category.</div>
 
-    <div class="label" style="margin-top:8px">Type</div>
+    <div class="label" style="margin-top:8px">Split</div>
     <div class="type-toggle">
-      <button class="type-btn selected" id="btn-personal" onclick="pickType('Personal')">Personal</button>
-      <button class="type-btn"          id="btn-shared"   onclick="pickType('Shared')">Shared</button>
+      <button class="type-btn selected" id="btn-personal"   onclick="pickType('Personal')">Personal</button>
+      <button class="type-btn"          id="btn-partner"    onclick="pickType('Partner')">Partner</button>
+      <button class="type-btn"          id="btn-housemates" onclick="pickType('Housemates')">Housemates</button>
     </div>
 
     <button class="btn btn-next" onclick="goTo3()">Next →</button>
@@ -555,8 +558,9 @@
 
   function pickType(t) {
     entry.type = t;
-    document.getElementById("btn-personal").classList.toggle("selected", t === "Personal");
-    document.getElementById("btn-shared").classList.toggle("selected",   t === "Shared");
+    document.getElementById("btn-personal").classList.toggle("selected",   t === "Personal");
+    document.getElementById("btn-partner").classList.toggle("selected",    t === "Partner");
+    document.getElementById("btn-housemates").classList.toggle("selected", t === "Housemates");
   }
 
   // ── Submit ──────────────────────────────────────────────────────────────
